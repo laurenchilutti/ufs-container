@@ -1,0 +1,63 @@
+# Build stage with Spack pre-installed and ready to be used
+FROM thomasrobinson/environment_container:intel2021.4 as builder
+
+RUN . /opt/intel/oneapi/setvars.sh \
+&& . /etc/profile.d/z10_spack_environment.sh \
+&& . /etc/profile.d/01-locale-fix.sh \
+&& export BUILD_ROOT=/home/build \
+&& export UFS_MODEL_DIR=${BUILD_ROOT}/ufs-weather-model \
+&& export CMAKE_FLAGS="-DAPP=ATM -DCCPP_SUITES=FV3_GFS_v16,FV3_GFS_v15_thompson_mynn,FV3_GFS_v15_thompson_mynn_RRTMGP,FV3_GSD_v0,FV3_RAP,FV3_HRRR,FV3_RRFS_v1beta,FV3_RRFS_v1alpha,FV3_GFS_v16_nsstNoahmpUGWPv1 -D32BIT=ON -DMPI=ON -DCMAKE_BUILD_TYPE=Release -DAPP=ATM -DCCPP_SUITES=FV3_GFS_v16,FV3_GFS_v15_thompson_mynn,FV3_GFS_v15_thompson_mynn_RRTMGP,FV3_GSD_v0,FV3_RAP,FV3_HRRR,FV3_RRFS_v1beta,FV3_RRFS_v1alpha,FV3_GFS_v16_nsstNoahmpUGWPv1 -D32BIT=ON -DMPI=ON -DCMAKE_BUILD_TYPE=Release" \
+&& export CC=mpiicc \
+&& export CXX=mpiicpc \
+&& export FC=mpiifort \
+&& export CMAKE_PREFIX_PATH=${BUILD_ROOT}/build_fms/lib/cmake/fms \
+&& export CMAKE_LIBRARY_PATH=/opt/view/lib \
+&& export NetCDF_ROOT=`nc-config --prefix` \
+&& export LDFLAGS=-L/opt/view/lib \
+&& export ESMFMKFILE=/opt/intel/linux-ubuntu18.04-haswell/intel-2021.4.0/esmf-8.1.1-dv4frdj2la6qrt4ygxm22n7w5spowr5y/lib/esmf.mk \
+&& mkdir ${BUILD_ROOT} \
+&& cd ${BUILD_ROOT} \
+&& mkdir -p build_fms \ 
+&& cd build_fms \
+&& git clone -b 2021.03 https://github.com/NOAA-GFDL/FMS.git \
+&& mkdir -p FMS/build && cd FMS/build \
+&& cmake .. -DCMAKE_INSTALL_PREFIX=${BUILD_ROOT}/build_fms -DOPENMP=on -D64BIT=on \
+&& make -j 4 install 
+
+RUN . /opt/intel/oneapi/setvars.sh \
+&& . /etc/profile.d/z10_spack_environment.sh \
+&& . /etc/profile.d/01-locale-fix.sh \
+&& export BUILD_ROOT=/home/build \
+&& export UFS_MODEL_DIR=${BUILD_ROOT}/ufs-weather-model \
+&& export CMAKE_FLAGS="-DAPP=ATM -DCCPP_SUITES=FV3_GFS_v16,FV3_GFS_v15_thompson_mynn,FV3_GFS_v15_thompson_mynn_RRTMGP,FV3_GSD_v0,FV3_RAP,FV3_HRRR,FV3_RRFS_v1beta,FV3_RRFS_v1alpha,FV3_GFS_v16_nsstNoahmpUGWPv1 -D32BIT=ON -DMPI=ON -DCMAKE_BUILD_TYPE=Release -DAPP=ATM -DCCPP_SUITES=FV3_GFS_v16,FV3_GFS_v15_thompson_mynn,FV3_GFS_v15_thompson_mynn_RRTMGP,FV3_GSD_v0,FV3_RAP,FV3_HRRR,FV3_RRFS_v1beta,FV3_RRFS_v1alpha,FV3_GFS_v16_nsstNoahmpUGWPv1 -D32BIT=ON -DMPI=ON -DCMAKE_BUILD_TYPE=Release" \
+&& export CC=mpiicc \
+&& export CXX=mpiicpc \
+&& export FC=mpiifort \
+&& export CMAKE_PREFIX_PATH=${BUILD_ROOT}/build_fms/lib/cmake/fms \
+&& export CMAKE_LIBRARY_PATH=/opt/view/lib \
+&& export NetCDF_ROOT=`nc-config --prefix` \
+&& export LDFLAGS=-L/opt/view/lib \
+&& export ESMFMKFILE=/opt/intel/linux-ubuntu18.04-haswell/intel-2021.4.0/esmf-8.1.1-dv4frdj2la6qrt4ygxm22n7w5spowr5y/lib/esmf.mk \
+&& cd ${BUILD_ROOT} \
+&& git clone --recursive -b singularity https://github.com/laurenchilutti/ufs-weather-model.git \
+&& mkdir -p ${BUILD_ROOT}/ufs-weather-model/tests/build_fv3_001 \
+&& cd ${BUILD_ROOT}/ufs-weather-model/tests/build_fv3_001 \
+&& cmake ${UFS_MODEL_DIR} ${CMAKE_FLAGS} \
+&& OMP_NUM_THREADS=1 make -j 4
+
+RUN export BUILD_ROOT=/home/build \
+&& mkdir -p /opt/models/bin \
+&& cp ${BUILD_ROOT}/ufs-weather-model/tests/build_fv3_001/ufs_model /opt/models/bin/fv3.exe
+# Bare OS image to run the installed executables
+#FROM intel/oneapi-hpckit 
+
+#COPY --from=builder /opt /opt
+#COPY --from=builder /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
+#
+#RUN apt-get update
+#RUN apt-get install -y git
+#RUN apt-get install -y autoconf
+#RUN apt-get install -y libtool
+
+ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l", "/etc/profile.d", "-l"]
+
