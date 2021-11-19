@@ -10,7 +10,7 @@ docker build -t gfdl_ufs:FMS2021.03-intel2021.4 -f Dockerfile .
 ```
 
 ## Pulling
-The docker container images are currently stored in the `thomasrobinson` repository on dockerhub.  If pulling using singularity:
+The docker container images are currently stored in the [thomasrobinson](https://hub.docker.com/repository/docker/thomasrobinson/gfdl_ufs) repository on dockerhub.  If pulling using singularity:
 ```bash
 singularity pull docker://thomasrobinson/gfdl_ufs:FMS2021.03-intel2021.4
 ```
