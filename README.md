@@ -16,8 +16,8 @@ singularity pull docker://thomasrobinson/gfdl_ufs:FMS2021.03-intel2021.4
 ```
 
 ## Running
-The folder (runscript)[runscript] has run scripts to run the model. The default run script is a link called 
-(runscript/run.sh)[run.sh].  Use `singularity exec` to run execute this runscript.  If you have the 
+The folder [runscript](runscript) has run scripts to run the model. The default run script is a link called 
+[runscript/run.sh](run.sh).  Use `singularity exec` to run execute this runscript.  If you have the 
 `gfdl_ufs_FMS2021.03-intel2021.4.sif` file in your run directory and you are in your run directory, you can 
 do the following (assuming you set the variable `ranks` to be the number of MPI ranks you wish to run)
 
